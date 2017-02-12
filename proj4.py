@@ -1,4 +1,4 @@
-""" 507 Project 2
+"""507 Project 2
 This assignment is all about web scraping with Beautiful Soup. There are four problems,
 each worth 10 points.
 
@@ -12,60 +12,51 @@ Please follow the output format examples as closely as possible. We will create 
 expects the output to precisely match the format of the output shown.
 """
 
-import urllib.request, urllib.parse, urllib.error
-from bs4 import BeautifulSoup
+import urllib.request 
 from urllib.parse import urlparse
+import BeautifulSoup
 import ssl
 
-def get_soup(uri):
-    """ Get the html parsed soup for a url
-    """
-    # Ignore SSL certificate errors
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
-
-    html = urllib.request.urlopen(uri, context=ctx).read()
-    return BeautifulSoup(html, "html.parser")
+# Ignore SSL certificate errors
+CTX = ssl.create_default_context()
+CTX.check_hostname = False
+CTX.verify_mode = ssl.CERT_NONE
 
 class Facultydirectorypage(object):
     """ Parse a page, get the faculty links and next link.
     """
-    def __init__(self, uri_input, first_item):
+    def __init__(self, uri):
         """ Get a collection of contact links from a page
         """
-        self.item = first_item
-        self.uri = urlparse(uri_input)
-        self.soup = get_soup(uri_input)
-
-    def get_url(self, path):
-        """ Create a new url from a path
-        """
-        return self.uri.scheme + "://" + self.uri.netloc + path
+        self.uri = urlparse(URLMSI)
+        html = urllib.request.urlopen(uri, context=CTX).read()
+        self.soup = BeautifulSoup(html, "html.parser")
 
     def contact_links(self):
-        """ Get the client page links
+        """ Get the client links
         """
         retlist = list()
-        for detail in self.soup.find_all('a', text="Contact Details"):
-            retlist.append(self.get_url(detail['href']))
+        details = self.soup.find_all('a', text="Contact Details")
+        for detail in details:
+            retlist.append(self.uri.scheme + "://" + self.uri.netloc + detail['href'])
         return retlist
 
     def next_page(self):
-        """ Get the next page link object
+        """ Get the next page link
         """
         path = self.soup.find('a', title="Go to next page")
         if path:
-            return Facultydirectorypage(self.get_url(path['href']), self.item)
-        return None
+            uri = self.URI.scheme + "://" + self.URI.netloc + path['href']
+            return Facultydirectorypage(uri)
+        return
 
     def get_email_address(self, uri):
         """ Get a particular soup from a page
         """
-        emailtab = get_soup(uri).find('div', class_='field-name-field-person-email')
-        email_string = emailtab.get_text().replace("Email:", str(self.item))
-        self.item += 1
-        return email_string
+        html = urllib.request.urlopen(uri, context=CTX).read()
+        soup = BeautifulSoup(html, "html.parser")
+        emailtab = soup.find('div', class_='field-name-field-person-email')
+        return emailtab.get_text()
 
 
 #### Problem 1 ####
@@ -112,11 +103,17 @@ Grading and partial credit: We will pull the current headlines at the time of gr
 them to your output. You will receive one point for each correct headline.
 """
 
-NYTSOUP = get_soup("http://www.newyorktimes.com")
-NYTHEADLINES = NYTSOUP.find_all('h2', class_="story-heading")
+URLNYT = "http://www.newyorktimes.com"
+O = urlparse(URLNYT)
+print (O.netloc)
 
-for headline in NYTHEADLINES[:10]:
-    print (headline.get_text().strip())
+HTML = urllib.request.urlopen(URLNYT, context=CTX).read()
+SOUP = BeautifulSoup(HTML, "html.parser")
+
+HEADLINES1 = SOUP.find_all('h2', class_="story-heading")
+
+for headline in HEADLINES1[0:10]:
+    print (headline.get_text().rstrip())
 
 #### Problem 2 ####
 print('\n*********** PROBLEM 2 ***********')
@@ -145,10 +142,14 @@ Grading and partial credit: We will pull the current Most Read headlines at the 
 and compare them to your output. You will receive two points for each correct headline.
 """
 
-MDSOUP = get_soup("https://www.michigandaily.com/")
+URLMICHIGANDAILY = "https://www.michigandaily.com/"
+HTML = urllib.request.urlopen(URLMICHIGANDAILY, context=CTX).read()
+SOUP = BeautifulSoup(HTML, "html.parser")
 
-for headline in MDSOUP.find_all('div', class_="view-most-read"):
-    print (headline.get_text().strip())
+DIVTAGS2 = SOUP.find_all('div', class_="view-most-read")
+
+for headline in DIVTAGS2:
+    print (headline.get_text())
 
 #### Problem 3 ####
 print('\n*********** PROBLEM 3 ***********')
@@ -187,16 +188,21 @@ alt text "Waving Kitty 7." There will still be 10 images though. You will receiv
 each correct alt text output.
 """
 
-for kitty in get_soup("http://newmantaylor.com/gallery.html").find_all('img'):
-    if 'alt' in kitty.attrs:
-        print (kitty['alt'])
+URLKITTY = "http://newmantaylor.com/gallery.html"
+HTML = urllib.request.urlopen(URLKITTY, context=CTX).read()
+SOUP = BeautifulSoup(HTML, "html.parser")
+
+IMGTAGS = SOUP.find_all('img')
+
+for headline in IMGTAGS:
+    if headline.has_attr('alt'):
+        print (headline['alt'])
     else:
         print ("No alternative text provided!!")
 
 #### Problem 4 ####
 print('\n*********** PROBLEM 4 ***********')
 print("UMSI faculty directory emails\n")
-
 """
 Problem 4: Print all UMSI faculty emails
 Points: 10
@@ -239,10 +245,13 @@ and 102 will be considered on a case-by-case basis.
 """
 
 URLMSI = "https://www.si.umich.edu/directory?field_person_firstname_value=&field_person_lastname_value=&rid=4"
-CONTACTPAGE = Facultydirectorypage(URLMSI, 1)
+CONTACTPAGE = Facultydirectorypage(URLMSI)
+ITEM = 1
 
 while CONTACTPAGE:
-    for contact_link in CONTACTPAGE.contact_links():
-        print (CONTACTPAGE.get_email_address(contact_link))
+    for headline in CONTACTPAGE.contact_links():
+        email = CONTACTPAGE.get_email_address(headline)
+        print (email.replace("Email:", str(ITEM)))
+        ITEM += 1
 
     CONTACTPAGE = CONTACTPAGE.next_page()
