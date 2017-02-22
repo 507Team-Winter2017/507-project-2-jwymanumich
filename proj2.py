@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 import ssl
 
-def get_soup(uri):
+def get_soup(uri, request_headers):
     """ Get the html parsed soup for a url
     """
     # Ignore SSL certificate errors
@@ -25,7 +25,8 @@ def get_soup(uri):
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE
 
-    html = urllib.request.urlopen(uri, context=ctx).read()
+    request = urllib.request.Request(uri, headers=request_headers)
+    html = urllib.request.urlopen(request, context=ctx).read()
     return BeautifulSoup(html, "html.parser")
 
 class Facultydirectorypage(object):
@@ -36,7 +37,7 @@ class Facultydirectorypage(object):
         """
         self.item = first_item
         self.uri = urlparse(uri_input)
-        self.soup = get_soup(uri_input)
+        self.soup = get_soup(uri_input, {'User-Agent': 'SI_CLASS'})
 
     def get_url(self, path):
         """ Create a new url from a path
@@ -62,7 +63,7 @@ class Facultydirectorypage(object):
     def get_email_address(self, uri):
         """ Get a particular soup from a page
         """
-        emailtab = get_soup(uri).find('div', class_='field-name-field-person-email')
+        emailtab = get_soup(uri, {'User-Agent': 'SI_CLASS'} ).find('div', class_='field-name-field-person-email')
         email_string = emailtab.get_text().replace("Email:", str(self.item))
         self.item += 1
         return email_string
@@ -112,7 +113,7 @@ Grading and partial credit: We will pull the current headlines at the time of gr
 them to your output. You will receive one point for each correct headline.
 """
 
-NYTSOUP = get_soup("http://www.newyorktimes.com")
+NYTSOUP = get_soup("http://www.newyorktimes.com", {})
 NYTHEADLINES = NYTSOUP.find_all('h2', class_="story-heading")
 
 for headline in NYTHEADLINES[:10]:
@@ -145,7 +146,7 @@ Grading and partial credit: We will pull the current Most Read headlines at the 
 and compare them to your output. You will receive two points for each correct headline.
 """
 
-MDSOUP = get_soup("https://www.michigandaily.com/")
+MDSOUP = get_soup("https://www.michigandaily.com/", {})
 
 for headline in MDSOUP.find_all('div', class_="view-most-read"):
     print (headline.get_text().strip())
@@ -187,11 +188,11 @@ alt text "Waving Kitty 7." There will still be 10 images though. You will receiv
 each correct alt text output.
 """
 
-for kitty in get_soup("http://newmantaylor.com/gallery.html").find_all('img'):
+for kitty in get_soup("http://newmantaylor.com/gallery.html", {}).find_all('img'):
     if 'alt' in kitty.attrs:
         print (kitty['alt'])
     else:
-        print ("No alternative text provided!!")
+        print ("No alternative text provided!")
 
 #### Problem 4 ####
 print('\n*********** PROBLEM 4 ***********')
